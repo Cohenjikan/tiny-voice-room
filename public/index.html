@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tiny Voice Room</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="app-shell" aria-label="Tiny Voice Room">
+      <section class="room-panel">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Tiny Voice Room</p>
+            <h1>在线即时语音</h1>
+          </div>
+          <div class="status-pill" id="statusPill" data-state="idle">离线</div>
+        </header>
+
+        <div class="invite-row">
+          <label class="field">
+            <span>邀请链接</span>
+            <input id="inviteInput" type="text" readonly data-testid="invite-input">
+          </label>
+          <button class="icon-button" id="copyButton" type="button" title="复制邀请链接" aria-label="复制邀请链接" data-testid="copy-button">
+            <span aria-hidden="true">⧉</span>
+          </button>
+        </div>
+        <p class="network-note" id="networkNote" hidden></p>
+
+        <div class="join-grid">
+          <label class="field">
+            <span>昵称</span>
+            <input id="nameInput" type="text" maxlength="32" autocomplete="nickname" data-testid="name-input">
+          </label>
+          <button class="primary-button" id="joinButton" type="button" data-testid="join-button">
+            <span aria-hidden="true">●</span>
+            加入语音
+          </button>
+          <button class="secondary-button" id="leaveButton" type="button" disabled data-testid="leave-button">
+            <span aria-hidden="true">×</span>
+            离开
+          </button>
+        </div>
+
+        <div class="control-strip" aria-label="语音控制">
+          <button class="tool-button" id="muteButton" type="button" disabled data-testid="mute-button" aria-pressed="false">静音</button>
+          <button class="tool-button" id="pttButton" type="button" disabled data-testid="ptt-button" aria-pressed="false" title="按住 T 键说话">按键说话</button>
+          <div class="meter" aria-hidden="true">
+            <span id="meterBar"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="people-panel" aria-labelledby="peopleTitle">
+        <div class="section-head">
+          <h2 id="peopleTitle">成员</h2>
+          <span id="peopleCount">0</span>
+        </div>
+        <ul id="peopleList" class="people-list" data-testid="people-list"></ul>
+      </section>
+    </main>
+
+    <div id="remoteAudio" class="remote-audio" aria-hidden="true"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="/app.js?v=20260512g" type="module"></script>
+  </body>
+</html>

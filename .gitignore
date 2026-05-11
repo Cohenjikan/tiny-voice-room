@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.*
+.DS_Store
+Thumbs.db
+*.log
+dist/
+coverage/
+
+# local-only tools (Windows binaries, etc.)
+tools/
+
+# agent / editor caches
+.claude/
+.vscode/
+.idea/
