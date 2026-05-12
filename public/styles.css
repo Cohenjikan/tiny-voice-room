@@ -364,6 +364,39 @@ input:focus {
   box-shadow: none;
 }
 
+.low-mem-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: -4px;
+  padding: 6px 10px;
+  width: fit-content;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #191815;
+  color: var(--muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.low-mem-toggle input[type="checkbox"] {
+  width: auto;
+  min-height: 0;
+  height: 14px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  accent-color: var(--green);
+  cursor: pointer;
+}
+
+.low-mem-toggle:has(input:checked) {
+  border-color: rgba(97, 211, 148, 0.45);
+  color: var(--green);
+}
+
 .remote-audio {
   display: none;
 }

@@ -12,6 +12,7 @@ const peopleList = document.querySelector("#peopleList");
 const peopleCount = document.querySelector("#peopleCount");
 const remoteAudio = document.querySelector("#remoteAudio");
 const toast = document.querySelector("#toast");
+const lowMemCheckbox = document.querySelector("#lowMemCheckbox");
 
 const defaultIceServers = [{ urls: ["stun:stun.l.google.com:19302"] }];
 const roomId = getRoomId();
@@ -25,7 +26,7 @@ const state = {
   meterSource: null,
   meterAnalyser: null,
   meterData: null,
-  meterFrame: 0,
+  meterInterval: 0,
   peers: new Map(),
   peerVolumes: new Map(),
   preview: [],
@@ -38,25 +39,84 @@ const state = {
   pttHeld: false,
   talking: false,
   lastPresence: { muted: false, talking: false },
+  lowMem: localStorage.getItem("tiny-voice-low-mem") === "1",
+  refreshing: false,
   toastTimer: 0
 };
 
 inviteInput.value = inviteUrl;
 nameInput.value = localStorage.getItem("tiny-voice-name") || `Player-${Math.floor(100 + Math.random() * 900)}`;
+if (lowMemCheckbox) lowMemCheckbox.checked = state.lowMem;
 loadInviteLinks();
 loadRoomPreview();
-state.previewTimer = setInterval(() => {
-  if (!state.joined && !state.connecting && document.visibilityState === "visible") {
-    loadRoomPreview();
-  }
-}, 10_000);
+startPreviewPoll();
 render();
+
+document.addEventListener("visibilitychange", handleVisibilityChange);
+
+function startPreviewPoll() {
+  stopPreviewPoll();
+  state.previewTimer = setInterval(() => {
+    if (!state.joined && !state.connecting && document.visibilityState === "visible") {
+      loadRoomPreview();
+    }
+  }, 10_000);
+}
+
+function stopPreviewPoll() {
+  if (state.previewTimer) {
+    clearInterval(state.previewTimer);
+    state.previewTimer = 0;
+  }
+}
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    stopPreviewPoll();
+    stopMeterTick();
+  } else {
+    if (!state.joined && !state.connecting) startPreviewPoll();
+    if (state.joined && state.meterAnalyser) startMeterTick();
+    // Recover stale mic track when window comes back from background
+    if (state.joined) checkAndRefreshLocalTrack();
+  }
+}
 
 copyButton.addEventListener("click", copyInvite);
 joinButton.addEventListener("click", joinVoice);
 leaveButton.addEventListener("click", leaveVoice);
 muteButton.addEventListener("click", toggleMute);
 pttButton.addEventListener("click", togglePtt);
+
+if (lowMemCheckbox) {
+  lowMemCheckbox.addEventListener("change", () => {
+    state.lowMem = lowMemCheckbox.checked;
+    localStorage.setItem("tiny-voice-low-mem", state.lowMem ? "1" : "0");
+    if (state.joined) showToast("下次加入语音生效");
+  });
+}
+
+// Delegate per-peer volume slider input from peopleList, so render() doesn't
+// recreate a new event listener for every slider on each refresh.
+peopleList.addEventListener("input", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) return;
+  if (target.className !== "person-volume") return;
+  const peerId = target.dataset.peerId;
+  if (!peerId) return;
+  setPeerVolume(peerId, Number(target.value) / 100);
+});
+
+function getAudioConstraints() {
+  return {
+    audio: {
+      echoCancellation: !state.lowMem,
+      noiseSuppression: !state.lowMem,
+      autoGainControl: !state.lowMem
+    },
+    video: false
+  };
+}
 let nameDebounceTimer = 0;
 let lastSentName = nameInput.value.trim();
 
@@ -202,15 +262,8 @@ async function joinVoice() {
   render();
 
   try {
-    state.localStream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true
-      },
-      video: false
-    });
-
+    state.localStream = await navigator.mediaDevices.getUserMedia(getAudioConstraints());
+    watchLocalTracks(state.localStream);
     setupLocalMeter(state.localStream);
     connectSocket();
   } catch (error) {
@@ -219,6 +272,61 @@ async function joinVoice() {
     showToast(error?.message || "无法打开麦克风");
     stopLocalStream();
     render();
+  }
+}
+
+function watchLocalTracks(stream) {
+  for (const track of stream.getAudioTracks()) {
+    // Browsers may mute the track when the tab is hidden for a long time
+    // (power-saving). New peers that join afterwards would otherwise pick
+    // up a dead track and hear silence.
+    track.addEventListener("mute", onLocalTrackBroken);
+    track.addEventListener("ended", onLocalTrackBroken);
+  }
+}
+
+function onLocalTrackBroken() {
+  refreshLocalStream().catch(() => {});
+}
+
+async function checkAndRefreshLocalTrack() {
+  const track = state.localStream?.getAudioTracks()[0];
+  if (!track) return;
+  if (track.readyState !== "live" || track.muted) {
+    await refreshLocalStream().catch(() => {});
+  }
+}
+
+async function refreshLocalStream() {
+  if (state.refreshing || !state.joined) return;
+  state.refreshing = true;
+  try {
+    const newStream = await navigator.mediaDevices.getUserMedia(getAudioConstraints());
+    const newTrack = newStream.getAudioTracks()[0];
+    if (!newTrack) {
+      for (const t of newStream.getTracks()) t.stop();
+      return;
+    }
+
+    // Replace track on existing peer connections (no renegotiation needed).
+    for (const peer of state.peers.values()) {
+      const sender = peer.pc.getSenders().find((s) => s.track && s.track.kind === "audio");
+      if (sender) {
+        try { await sender.replaceTrack(newTrack); } catch {}
+      }
+    }
+
+    // Stop old stream and swap.
+    for (const t of state.localStream?.getTracks() || []) t.stop();
+    state.localStream = newStream;
+    watchLocalTracks(newStream);
+
+    // Reset meter so it reads from the new stream.
+    stopMeter();
+    setupLocalMeter(newStream);
+    applyTrackState();
+  } finally {
+    state.refreshing = false;
   }
 }
 
@@ -316,7 +424,21 @@ function ensurePeer(peerInfo, initiator) {
     return peer;
   }
 
-  const pc = new RTCPeerConnection({ iceServers: state.iceServers });
+  // Belt-and-suspenders: before exposing localStream to a new PC, make sure
+  // the track is still alive. If it isn't, fire-and-forget a refresh — the
+  // first offer will go out with the (possibly dead) track, but replaceTrack
+  // inside refreshLocalStream will recover it quickly.
+  const localTrack = state.localStream?.getAudioTracks()[0];
+  if (state.joined && (!localTrack || localTrack.readyState !== "live" || localTrack.muted)) {
+    refreshLocalStream().catch(() => {});
+  }
+
+  const pc = new RTCPeerConnection({
+    iceServers: state.iceServers,
+    bundlePolicy: "max-bundle",
+    rtcpMuxPolicy: "require",
+    iceCandidatePoolSize: 0
+  });
   peer = {
     id: peerInfo.id,
     name: peerInfo.name || "Player",
@@ -387,9 +509,11 @@ async function handleSignal(message) {
     const candidate = new RTCIceCandidate(message.candidate);
     if (peer.pc.remoteDescription) {
       await peer.pc.addIceCandidate(candidate).catch(() => {});
-    } else {
+    } else if (peer.pendingCandidates.length < 32) {
       peer.pendingCandidates.push(candidate);
     }
+    // Beyond 32 pending candidates we drop — the remote will retry via
+    // ICE consent freshness anyway, and unbounded buffering is a leak vector.
   }
 }
 
@@ -506,15 +630,33 @@ function setupLocalMeter(stream) {
   state.audioContext = new AudioContextClass();
   state.meterSource = state.audioContext.createMediaStreamSource(stream);
   state.meterAnalyser = state.audioContext.createAnalyser();
-  state.meterAnalyser.fftSize = 512;
+  state.meterAnalyser.fftSize = 256;
   state.meterData = new Uint8Array(state.meterAnalyser.frequencyBinCount);
   state.meterSource.connect(state.meterAnalyser);
 
-  tickMeter();
+  startMeterTick();
+}
+
+function startMeterTick() {
+  stopMeterTick();
+  if (!state.meterAnalyser) return;
+  // 120ms ≈ 8fps; volume bar still feels responsive, talking detection lag is fine.
+  // RAF at 60fps was burning CPU/GC for no perceptible UI gain.
+  state.meterInterval = setInterval(tickMeter, 120);
+}
+
+function stopMeterTick() {
+  if (state.meterInterval) {
+    clearInterval(state.meterInterval);
+    state.meterInterval = 0;
+  }
 }
 
 function tickMeter() {
-  if (!state.meterAnalyser) return;
+  if (!state.meterAnalyser) {
+    stopMeterTick();
+    return;
+  }
 
   state.meterAnalyser.getByteTimeDomainData(state.meterData);
 
@@ -534,8 +676,6 @@ function tickMeter() {
     sendPresence({ muted: effectiveMuted(), talking: state.talking });
     render();
   }
-
-  state.meterFrame = requestAnimationFrame(tickMeter);
 }
 
 function leaveVoice() {
@@ -565,11 +705,13 @@ function resetConnection(showIdle) {
 
   stopLocalStream();
   stopMeter();
+  stopPreviewPoll();
 
   if (showIdle) {
     setStatus("idle", "离线");
     state.preview = [];
     loadRoomPreview();
+    startPreviewPoll();
   }
 
   render();
@@ -583,10 +725,8 @@ function stopLocalStream() {
 }
 
 function stopMeter() {
-  if (state.meterFrame) {
-    cancelAnimationFrame(state.meterFrame);
-    state.meterFrame = 0;
-  }
+  stopMeterTick();
+  try { state.meterSource?.disconnect(); } catch {}
   state.audioContext?.close().catch(() => {});
   state.audioContext = null;
   state.meterSource = null;
@@ -687,10 +827,9 @@ function createPersonItem(person) {
     slider.step = "1";
     slider.className = "person-volume";
     slider.title = "音量";
+    slider.dataset.peerId = person.id;
     slider.value = String(Math.round((state.peerVolumes.get(person.id) ?? 1) * 100));
-    slider.addEventListener("input", () => {
-      setPeerVolume(person.id, Number(slider.value) / 100);
-    });
+    // Input handler lives on peopleList (event delegation) — see top of file.
     item.append(slider);
   }
 
