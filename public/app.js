@@ -28,6 +28,8 @@ const state = {
   meterFrame: 0,
   peers: new Map(),
   peerVolumes: new Map(),
+  preview: [],
+  previewTimer: 0,
   iceServers: defaultIceServers,
   joined: false,
   connecting: false,
@@ -42,6 +44,12 @@ const state = {
 inviteInput.value = inviteUrl;
 nameInput.value = localStorage.getItem("tiny-voice-name") || `Player-${Math.floor(100 + Math.random() * 900)}`;
 loadInviteLinks();
+loadRoomPreview();
+state.previewTimer = setInterval(() => {
+  if (!state.joined && !state.connecting && document.visibilityState === "visible") {
+    loadRoomPreview();
+  }
+}, 10_000);
 render();
 
 copyButton.addEventListener("click", copyInvite);
@@ -137,6 +145,18 @@ async function copyInvite() {
     document.execCommand("copy");
     showToast("邀请链接已复制");
   }
+}
+
+async function loadRoomPreview() {
+  if (state.joined || state.connecting) return;
+  try {
+    const response = await fetch(`/api/rooms/${encodeURIComponent(roomId)}`, { cache: "no-store" });
+    if (!response.ok) return;
+    const data = await response.json();
+    if (state.joined || state.connecting) return;
+    state.preview = Array.isArray(data.peers) ? data.peers : [];
+    render();
+  } catch {}
 }
 
 async function loadInviteLinks() {
@@ -548,6 +568,8 @@ function resetConnection(showIdle) {
 
   if (showIdle) {
     setStatus("idle", "离线");
+    state.preview = [];
+    loadRoomPreview();
   }
 
   render();
@@ -599,10 +621,19 @@ function render() {
       talking: state.talking,
       status: state.connecting ? "connecting" : "connected"
     });
-  }
-
-  for (const peer of state.peers.values()) {
-    people.push(peer);
+    for (const peer of state.peers.values()) {
+      people.push(peer);
+    }
+  } else {
+    for (const peer of state.preview) {
+      people.push({
+        id: peer.id,
+        name: peer.name || "Player",
+        muted: Boolean(peer.muted),
+        talking: Boolean(peer.talking),
+        status: "preview"
+      });
+    }
   }
 
   peopleCount.textContent = String(people.length);

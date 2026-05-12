@@ -429,6 +429,19 @@ async function handleHttp(req, res) {
     return;
   }
 
+  const roomMatch = url.pathname.match(/^\/api\/rooms\/([^/]+)\/?$/);
+  if (roomMatch) {
+    const id = sanitizeRoom(decodeURIComponent(roomMatch[1]));
+    const room = rooms.get(id);
+    const peers = room ? [...room.clients.values()].map(publicPeer) : [];
+    res.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store"
+    });
+    res.end(JSON.stringify({ id, count: peers.length, peers }));
+    return;
+  }
+
   if (url.pathname === "/api/links") {
     const room = sanitizeRoom(url.searchParams.get("room"));
     const lan = getLanHosts().map((hostAddress) => ({
