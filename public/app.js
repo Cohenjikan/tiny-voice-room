@@ -41,7 +41,8 @@ const state = {
   lastPresence: { muted: false, talking: false },
   lowMem: localStorage.getItem("tiny-voice-low-mem") === "1",
   refreshing: false,
-  toastTimer: 0
+  toastTimer: 0,
+  sfxContext: null
 };
 
 inviteInput.value = inviteUrl;
@@ -385,11 +386,13 @@ async function handleServerMessage(message) {
 
     case "peer-joined":
       ensurePeer(message.peer, false);
+      playJoinSound();
       render();
       break;
 
     case "peer-left":
       removePeer(message.id);
+      playLeaveSound();
       render();
       break;
 
@@ -679,6 +682,7 @@ function tickMeter() {
 }
 
 function leaveVoice() {
+  playLeaveSound();
   resetConnection(true);
 }
 
@@ -882,4 +886,51 @@ function isLoopbackHost(hostname) {
 
 function isTypingTarget(target) {
   return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target?.isContentEditable;
+}
+
+function ensureSfxContext() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return null;
+  if (!state.sfxContext) {
+    try { state.sfxContext = new AudioContextClass(); } catch { return null; }
+  }
+  if (state.sfxContext.state === "suspended") {
+    state.sfxContext.resume().catch(() => {});
+  }
+  return state.sfxContext;
+}
+
+function playTone(ctx, freq, startOffset, duration, peakGain) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(freq, ctx.currentTime + startOffset);
+
+  const start = ctx.currentTime + startOffset;
+  const end = start + duration;
+  gain.gain.setValueAtTime(0, start);
+  gain.gain.linearRampToValueAtTime(peakGain, start + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, end);
+
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(start);
+  osc.stop(end + 0.02);
+}
+
+function playJoinSound() {
+  if (!state.joined) return;
+  const ctx = ensureSfxContext();
+  if (!ctx) return;
+  // Ascending two-tone: C5 -> E5
+  playTone(ctx, 523.25, 0, 0.16, 0.18);
+  playTone(ctx, 659.25, 0.11, 0.22, 0.18);
+}
+
+function playLeaveSound() {
+  if (!state.joined) return;
+  const ctx = ensureSfxContext();
+  if (!ctx) return;
+  // Descending two-tone: E5 -> C5
+  playTone(ctx, 659.25, 0, 0.16, 0.18);
+  playTone(ctx, 523.25, 0.11, 0.22, 0.18);
 }
