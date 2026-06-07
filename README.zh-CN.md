@@ -17,6 +17,8 @@
 
 <img src="docs/assets/screenshot.png" alt="Tiny Voice Room——已连接的房间，含邀请链接、成员列表和每人独立音量控制" width="100%">
 
+<sub>▶ <a href="docs/assets/promo.mp4">观看 30 秒宣传片</a></sub>
+
 </div>
 
 > **和朋友开黑用的语音聊天——不用账号、不用安装、不用 Discord。**

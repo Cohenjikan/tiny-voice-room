@@ -17,6 +17,8 @@ A no-account, link-first **WebRTC voice room** for quick game comms — share a 
 
 <img src="docs/assets/screenshot.png" alt="Tiny Voice Room — a connected room with the invite link, member list, and per-peer volume controls" width="100%">
 
+<sub>▶ <a href="docs/assets/promo.mp4">Watch the 30-second promo</a></sub>
+
 </div>
 
 > **Voice chat for gaming with friends — no account, no install, no Discord.**
