@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎙️ Tiny Voice Room
+# Tiny Voice Room
 
 ### 链接即房间，发出去就能开口说话。
 
@@ -9,7 +9,7 @@
 [![License: MIT](https://img.shields.io/github/license/Cohenjikan/tiny-voice-room?color=brightgreen)](https://github.com/Cohenjikan/tiny-voice-room/blob/main/LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![Runtime deps](https://img.shields.io/badge/runtime%20deps-0-success)](https://github.com/Cohenjikan/tiny-voice-room/blob/main/package.json)
-[![Audio](https://img.shields.io/badge/audio-P2P%20mesh-blue)](#-功能特性)
+[![Audio](https://img.shields.io/badge/audio-P2P%20mesh-blue)](#功能特性)
 [![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)](https://github.com/Cohenjikan/tiny-voice-room/blob/main/Dockerfile)
 [![GitHub stars](https://img.shields.io/github/stars/Cohenjikan/tiny-voice-room?style=social)](https://github.com/Cohenjikan/tiny-voice-room/stargazers)
 
@@ -17,7 +17,7 @@
 
 <img src="docs/assets/screenshot.png" alt="Tiny Voice Room——已连接的房间，含邀请链接、成员列表和每人独立音量控制" width="100%">
 
-<sub>▶ <a href="docs/assets/promo.mp4">观看 30 秒宣传片</a></sub>
+<sub> <a href="docs/assets/promo.mp4">观看 30 秒宣传片</a></sub>
 
 </div>
 
@@ -26,19 +26,19 @@
 
 ---
 
-## ✨ 为什么用 Tiny Voice Room？
+## 为什么用 Tiny Voice Room？
 
 你和几个朋友想边玩边聊。开 Discord、让大家挨个登录、或者郑重其事地开个"会议"，都太重了。Tiny Voice Room 就是重型会议软件的反面：
 
-- 🔗 **链接即房间。** 发条链接就能说话。没有大厅、没有账号、不用装 App。
-- 🕸️ **真正的点对点音频。** 服务端只转发信令——你的声音在浏览器之间直连，从不经过它。
-- 📦 **零运行时依赖。** 没有 `node_modules`，没有供应链风险。一个能一口气读完的服务端文件。
-- 🗑️ **没有数据库。** 房间是纯内存状态，空了就被回收。无需预置、无需备份。
-- 🪶 **刻意做减法。** 没有密码、踢人、录音、视频、文字聊天——这是设计。
+- **链接即房间。** 发条链接就能说话。没有大厅、没有账号、不用装 App。
+- **真正的点对点音频。** 服务端只转发信令——你的声音在浏览器之间直连，从不经过它。
+- **零运行时依赖。** 没有 `node_modules`，没有供应链风险。一个能一口气读完的服务端文件。
+- **没有数据库。** 房间是纯内存状态，空了就被回收。无需预置、无需备份。
+- **刻意做减法。** 没有密码、踢人、录音、视频、文字聊天——这是设计。
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 > 需要 **Node 20+**。没有任何东西需要 `npm install`——因为根本没有依赖。
 
@@ -65,42 +65,42 @@ npm run check   # 可选：node --check 语法检查，无需依赖
 
 ---
 
-## 🧩 功能特性
+## 功能特性
 
-### 🔗 链接即房间
+### 链接即房间
 发条链接就能邀请——无注册、无大厅、不用装 App。访问 `/` 会悄悄把你送进一个全新的随机房间；想要指定房间就分享 `/r/<名字>`。房间号完全活在地址栏里。
 
 <img src="docs/assets/feature-1.png" alt="带一键复制按钮的邀请链接框、局域网链接提示，以及加入按钮" width="100%">
 
-### 🕸️ P2P mesh 音频——服务端从不接触媒体流
+### P2P mesh 音频——服务端从不接触媒体流
 音频在浏览器之间通过一张 `RTCPeerConnection` 全连接网（mesh）直连。Node 进程只中转 SDP/ICE 信令，因此它**无法录音、无法窃听**，也因此很轻。（标准 WebRTC 的 DTLS-SRTP 会在传输中加密媒体——这不是额外的应用层端到端加密承诺，只是说你的声音从不经过服务端。）
 
 <img src="docs/assets/feature-2.png" alt="已连接的房间：左侧是邀请链接，右侧成员栏里列出已连接的成员" width="100%">
 
-### 🎚️ 每人独立音量、静音、按键说话
+### 每人独立音量、静音、按键说话
 用每行的音量条单独平衡大嗓门和小声的朋友。一键静音，或者打开按键说话、**按住 `T`** 才出声。实时麦克风电平表让你知道自己到底有没有被听到。
 
 <img src="docs/assets/feature-3.png" alt="成员栏展示每人的音量条，以及说话中、在线、静音三种状态" width="100%">
 
-### ⚙️ 为自部署而生
+### 为自部署而生
 零运行时依赖，单个手写 WebSocket 的服务端文件。可配置的 STUN/TURN 应对真实网络，`/healthz` 健康检查端点，开箱即用的 `Dockerfile`，以及现成的 nginx / Caddy / systemd 配置。
 
 <img src="docs/assets/feature-4.png" alt="控制条：静音和按键说话按钮，旁边是实时麦克风电平表" width="100%">
 
-| | 特性 | 你得到什么 |
-|---|---|---|
-| 🔗 | **链接优先房间** | `/` → 随机房间，`/r/<名字>` → 指定房间，复制即邀请 |
-| 🕸️ | **P2P mesh 音频** | 浏览器直连；服务端仅做信令 |
-| 📦 | **零运行时依赖** | 单文件服务端，基于 `node:http` 手写 WS |
-| 🗑️ | **无数据库** | 内存房间，超过 `ROOM_TTL_MS`（默认 24h）后回收 |
-| 🎚️ | **每人音频控制** | 音量条、静音、按键说话（按住 `T`） |
-| 🌐 | **STUN/TURN 配置** | 默认公共 STUN；可指向你自己的 TURN |
-| 🛰️ | **局域网感知邀请** | 自动局域网 IP 链接 + 进房前预览 |
-| 🐳 | **容器/代理就绪** | Dockerfile、`/healthz`、HTTPS 反代示例 |
+| 特性 | 你得到什么 |
+|---|---|
+| **链接优先房间** | `/` → 随机房间，`/r/<名字>` → 指定房间，复制即邀请 |
+| **P2P mesh 音频** | 浏览器直连；服务端仅做信令 |
+| **零运行时依赖** | 单文件服务端，基于 `node:http` 手写 WS |
+| **无数据库** | 内存房间，超过 `ROOM_TTL_MS`（默认 24h）后回收 |
+| **每人音频控制** | 音量条、静音、按键说话（按住 `T`） |
+| **STUN/TURN 配置** | 默认公共 STUN；可指向你自己的 TURN |
+| **局域网感知邀请** | 自动局域网 IP 链接 + 进房前预览 |
+| **容器/代理就绪** | Dockerfile、`/healthz`、HTTPS 反代示例 |
 
 ---
 
-## 🔧 配置
+## 配置
 
 全部通过环境变量配置——没有配置文件。
 
@@ -126,7 +126,7 @@ npm run check   # 可选：node --check 语法检查，无需依赖
 
 ---
 
-## 🚢 部署
+## 部署
 
 浏览器只在**安全上下文**（`localhost` 或 HTTPS）下才授予麦克风权限，所以任何对外部署**都必须走 HTTPS**——通常通过反向代理。
 
@@ -135,7 +135,7 @@ npm run check   # 可选：node --check 语法检查，无需依赖
 ```
 
 <details>
-<summary><b>🐳 Docker</b></summary>
+<summary><b> Docker</b></summary>
 
 ```bash
 docker build -t tiny-voice-room .
@@ -216,21 +216,21 @@ WantedBy=multi-user.target
 
 ---
 
-## ⚠️ 老实说的限制
+## 老实说的限制
 
 这是个小而专注的工具。看清它是什么，也别误会它不是什么：
 
-- **🕸️ Mesh 拓扑。** 每多一个人，都给*每个*浏览器同时增加上行**和**下行带宽。建议房间人数 **≤ 6**。它不是"会议"软件。
-- **🔒 离开 localhost 必须 HTTPS。** 麦克风需要安全上下文。任何对外部署都得走 HTTPS（例如经反向代理）。
-- **📡 严格 NAT 需要 TURN。** 没配 TURN 时，两端都在严格 NAT 后可能连不上。异地稳定通话请自部署 [coturn](https://github.com/coturn/coturn)。
-- **🗑️ 房间是临时的。** 状态只在内存——重启服务会清空所有房间和成员。没有账号或个人资料；身份只是存在 `localStorage` 里、可随时改的昵称。
-- **🚫 故意没有的功能。** 没有密码、踢人、录音、文字聊天、视频、屏幕共享。这些是设计上的取舍，不在路线图上。
-- **🌏 界面语言。** 现版界面是**简体中文**（`lang="zh-CN"`）；本 README 是双语的，但应用内的文案目前还不是英文。
-- **📜 JS 驱动的跳转。** 随机房间跳转发生在客户端（`history.replaceState`），不是服务端 HTTP 重定向——禁用 JavaScript 时，`/` 不会自动跳转。
+- ** Mesh 拓扑。** 每多一个人，都给*每个*浏览器同时增加上行**和**下行带宽。建议房间人数 **≤ 6**。它不是"会议"软件。
+- ** 离开 localhost 必须 HTTPS。** 麦克风需要安全上下文。任何对外部署都得走 HTTPS（例如经反向代理）。
+- ** 严格 NAT 需要 TURN。** 没配 TURN 时，两端都在严格 NAT 后可能连不上。异地稳定通话请自部署 [coturn](https://github.com/coturn/coturn)。
+- ** 房间是临时的。** 状态只在内存——重启服务会清空所有房间和成员。没有账号或个人资料；身份只是存在 `localStorage` 里、可随时改的昵称。
+- ** 故意没有的功能。** 没有密码、踢人、录音、文字聊天、视频、屏幕共享。这些是设计上的取舍，不在路线图上。
+- ** 界面语言。** 现版界面是**简体中文**（`lang="zh-CN"`）；本 README 是双语的，但应用内的文案目前还不是英文。
+- ** JS 驱动的跳转。** 随机房间跳转发生在客户端（`history.replaceState`），不是服务端 HTTP 重定向——禁用 JavaScript 时，`/` 不会自动跳转。
 
 ---
 
-## 🗂️ 项目结构
+## 项目结构
 
 ```
 server.mjs        # 整个服务端：HTTP + 手写 WebSocket 信令，零依赖
@@ -246,10 +246,10 @@ Dockerfile        # node:24-alpine，EXPOSE 4173
 
 ---
 
-## 🤝 参与贡献
+## 参与贡献
 
 欢迎 Issue 和 PR。代码刻意保持极小且零依赖——也请你这样维护它：`npm run check` 要能通过，且不引入任何运行时依赖。
 
-## 📄 许可证
+## 许可证
 
 [MIT](LICENSE) © Cohenjikan
